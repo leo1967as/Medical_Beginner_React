@@ -44,10 +44,10 @@ const PatientProfile = () => {
                 <label>เพศ</label>
                 <div>{selectedPatient.sex}</div>
             </div>
-            <div className="form-group">
+            {/* <div className="form-group">
                 <label>โทรศัพท์</label>
                 <div>{displayValue(contact.phone)}</div>
-            </div>
+            </div> */}
             <div className="form-group">
                 <label>น้ำหนัก</label>
                 <div>{selectedPatient.weight} kg</div>

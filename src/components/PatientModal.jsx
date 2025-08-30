@@ -250,7 +250,7 @@ const PatientModal = () => {
                             />
                         </div>
                         
-                        <div className="form-group">
+                        {/* <div className="form-group">
                             <label>โทรศัพท์</label>
                             <input
                                 type="tel"
@@ -259,7 +259,7 @@ const PatientModal = () => {
                                 onChange={handleInputChange}
                                 placeholder="เบอร์โทรศัพท์"
                             />
-                        </div>
+                        </div> */}
                     </div>
                     
                     <div className="modal-section-title">แพ้ยา</div>
@@ -436,9 +436,9 @@ const PatientModal = () => {
                     </div>
                     
                     <div className="modal-footer">
-                        <button type="button" className="btn btn-secondary" onClick={closeModal}>
+                        {/* <button style={{margin:20}}type="button" className="btn btn-secondary" onClick={closeModal}>
                             ยกเลิก
-                        </button>
+                        </button> */}
                         <button type="submit" className="btn btn-primary">
                             {patientToEdit ? 'บันทึกการแก้ไข' : 'บันทึกผู้ป่วย'}
                         </button>

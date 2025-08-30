@@ -6,6 +6,7 @@ import PatientModal from './components/PatientModal';
 import DataExport from './components/DataExport';
 import Login from './components/Login';
 import AuthGuard from './components/AuthGuard';
+import PublicRoute from './components/PublicRoute';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
         <PatientProvider>
           <Routes>
             {/* Public route - Login page */}
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             
             {/* Protected routes - Require authentication */}
             <Route path="/" element={

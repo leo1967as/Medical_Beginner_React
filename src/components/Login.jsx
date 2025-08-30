@@ -139,7 +139,7 @@ const Login = () => {
                     </button>
                 </form>
 
-                <div className="login-footer">
+                {/* <div className="login-footer">
                     <p>
                         {isLogin ? 'ยังไม่มีบัญชี?' : 'มีบัญชีอยู่แล้ว?'}
                         <button
@@ -150,7 +150,7 @@ const Login = () => {
                             {isLogin ? 'สมัครสมาชิกที่นี่' : 'เข้าสู่ระบบ'}
                         </button>
                     </p>
-                </div>
+                </div> */}
             </div>
         </div>
     );
