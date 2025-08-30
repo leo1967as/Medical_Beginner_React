@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { usePatients } from '../context/PatientContext';
+import { useAuth } from '../context/UserContext';
+import UserProfile from './UserProfile';
 import { Link } from 'react-router-dom';
 
 const PatientSidebar = () => {
-    const { 
-        patients, 
-        selectedPatient, 
-        selectPatientById, 
-        loading, 
-        error, 
-        openModal 
+    const {
+        patients,
+        selectedPatient,
+        selectPatientById,
+        loading,
+        error,
+        openModal
     } = usePatients();
+    const { getCurrentUserName, getCurrentUserEmail } = useAuth();
     
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -56,6 +59,7 @@ const PatientSidebar = () => {
         <div className="patient-sidebar">
             <div className="sidebar-header">
                 <h2>รายชื่อผู้ป่วย</h2>
+                <UserProfile />
                 <div className="search-patient">
                     <input
                         type="text"

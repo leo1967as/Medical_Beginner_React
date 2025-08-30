@@ -170,7 +170,7 @@ const AssessmentForm = () => {
                         />
                     </div>
                     
-                    <div className="form-group">
+                    {/* <div className="form-group">
                         <label>หายใจ (ครั้ง/นาที)</label>
                         <input
                             type="text"
@@ -179,7 +179,7 @@ const AssessmentForm = () => {
                             onChange={handleInputChange}
                             placeholder="เช่น 16"
                         />
-                    </div>
+                    </div> */}
                     
                     <div className="form-group">
                         <label>อุณหภูมิ (°C)</label>

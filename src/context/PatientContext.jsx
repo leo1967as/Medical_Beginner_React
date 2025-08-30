@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
-import { fetchPatients, savePatient, updatePatient } from '../services/firebaseService';
+import { fetchPatients, savePatient, updatePatient, deletePatient } from '../services/firebaseService';
+import { useAuth } from './UserContext';
 
 const PatientContext = createContext();
 
@@ -12,12 +13,14 @@ export const PatientProvider = ({ children }) => {
     const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [patientToEdit, setPatientToEdit] = useState(null);
+    const { getCurrentUserId } = useAuth();
 
     const loadPatients = useCallback(async () => {
         try {
             setLoading(true);
             setError(null);
-            const patientData = await fetchPatients();
+            const userId = getCurrentUserId();
+            const patientData = await fetchPatients(userId);
             setPatients(patientData);
         } catch (err) {
             setError("Failed to load patient data.");
@@ -25,7 +28,7 @@ export const PatientProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [getCurrentUserId]);
 
     useEffect(() => {
         loadPatients();
@@ -39,7 +42,8 @@ export const PatientProvider = ({ children }) => {
     const handleSavePatient = async (patientData) => {
         try {
             setLoading(true);
-            const savedId = await savePatient(patientData);
+            const userId = getCurrentUserId();
+            const savedId = await savePatient(patientData, userId);
             await loadPatients(); // Reload all patients to get the latest data
             // If it was a new patient, select them. If it was an edit, re-select to get updated data.
             const newSelectedId = patientData.id || savedId;
@@ -64,7 +68,8 @@ export const PatientProvider = ({ children }) => {
             // --- END: REVISED FIX ---
 
             // Now, we are certain that `deeplyCleanedHistory` is clean.
-            await updatePatient(patientId, { history: deeplyCleanedHistory });
+            const userId = getCurrentUserId();
+            await updatePatient(patientId, { history: deeplyCleanedHistory }, userId);
             
             // Update local state to reflect the change immediately
             setPatients(prevPatients => prevPatients.map(p =>
@@ -89,6 +94,23 @@ export const PatientProvider = ({ children }) => {
         setPatientToEdit(null);
     };
 
+    const handleDeletePatient = async (patientId) => {
+        try {
+            setLoading(true);
+            const userId = getCurrentUserId();
+            await deletePatient(patientId, userId);
+            await loadPatients(); // Reload patients after deletion
+            if (selectedPatient?.id === patientId) {
+                setSelectedPatient(null);
+            }
+        } catch (err) {
+            setError("Failed to delete patient.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const value = {
         patients,
         selectedPatient,
@@ -99,6 +121,7 @@ export const PatientProvider = ({ children }) => {
         selectPatientById,
         handleSavePatient,
         updatePatientHistory,
+        handleDeletePatient,
         openModal,
         closeModal
     };

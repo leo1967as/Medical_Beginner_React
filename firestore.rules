@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Patients collection - user-based access control
+    match /patients/{patientId} {
+      // Allow read/write if user is authenticated and patient belongs to them
+      allow read, write: if request.auth != null 
+                        && request.auth.uid == resource.data.userId 
+                        && request.auth.uid == request.resource.data.userId;
+      
+      // Allow creation if user is authenticated and userId matches
+      allow create: if request.auth != null 
+                   && request.auth.uid == request.resource.data.userId;
+      
+      // Allow deletion if user is authenticated and patient belongs to them
+      allow delete: if request.auth != null 
+                   && request.auth.uid == resource.data.userId;
+    }
+
+    // Users collection (if you create one for user profiles)
+    match /users/{userId} {
+      // Allow users to read/write their own profile
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow public read access to documents without userId (for migration)
+    // This rule should be removed after migration is complete
+    match /patients/{patientId} {
+      allow read, write: if request.auth != null 
+                        && (resource.data.userId == request.auth.uid 
+                            || resource.data.userId == null);
+    }
+  }
+}
