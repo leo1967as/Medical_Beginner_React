@@ -19,26 +19,36 @@ async function generateWithOpenRouter(prompt) {
     const OPENROUTER_ENDPOINT = 'https://openrouter.ai/api/v1/chat/completions';
     const model = process.env.OPENROUTER_MODEL || "google/gemini-flash";
     console.log(`🔌 [AI Service] Sending request to OpenRouter (Primary) with model: ${model}...`);
+    
+    // Use environment variables for production-safe headers
+    const httpReferer = process.env.OPENROUTER_HTTP_REFERER || 'https://medical-learner.vercel.app';
+    const xTitle = process.env.OPENROUTER_X_TITLE || 'Medical Learner AI';
+    
     const systemPrompt = `**Role and Goal:** You are an Analytical Wellness Advisor AI. Your sole purpose is to analyze the provided patient data to generate a coherent, safe, and logically structured analysis in a complete JSON object format.`;
     const body = {
         model: model,
         messages: [{ role: "system", content: systemPrompt }, { role: "user", content: prompt }],
         response_format: { "type": "json_object" }
     };
+    
     const response = await fetch(OPENROUTER_ENDPOINT, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.OPENROUTER_API_KEY}`,
-            'HTTP-Referer': `http://localhost:${process.env.PORT || 3001}`, 
-            'X-Title': `AI Diagnose App`,
+            'HTTP-Referer': httpReferer,
+            'X-Title': xTitle,
         },
         body: JSON.stringify(body),
     });
+    
     if (!response.ok) {
         const errorBody = await response.text();
-        throw new Error(`OpenRouter API request failed with status ${response.status}: ${errorBody}`);
+        // Log minimal error info to prevent exposure
+        console.error(`❌ [AI Service] OpenRouter API failed with status ${response.status}`);
+        throw new Error(`OpenRouter API request failed with status ${response.status}`);
     }
+    
     const data = await response.json();
     if (data.choices?.[0]?.message?.content) {
         return data.choices[0].message.content;
@@ -177,9 +187,12 @@ async function getAiAnalysis(userData) {
 
     const jsonStringResponse = await generateContent(prompt); 
     try {
-        return JSON.parse(jsonStringResponse);
+        const parsedResponse = JSON.parse(jsonStringResponse);
+        console.log("✅ [AI Service] Successfully parsed JSON response");
+        return parsedResponse;
     } catch (parseError) {
         console.error('❌ [AI Service] Failed to parse JSON response:', parseError.message);
+        // Log only first 500 chars to avoid sensitive data exposure
         console.error('📄 [AI Service] Response content:', jsonStringResponse.substring(0, 500));
         throw new Error('AI service returned invalid response format. Please check API configuration or try again later.');
     }

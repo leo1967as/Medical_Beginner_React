@@ -22,11 +22,60 @@ const AssessmentForm = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const validateVitalSigns = (vitals) => {
+        const errors = {};
+        
+        if (vitals.bp) {
+            const bpRegex = /^\d{2,3}\/\d{2,3}$/;
+            if (!bpRegex.test(vitals.bp)) {
+                errors.bp = 'รูปแบบความดันไม่ถูกต้อง (เช่น 120/80)';
+            }
+        }
+        
+        if (vitals.hr) {
+            const hr = parseInt(vitals.hr);
+            if (isNaN(hr) || hr < 40 || hr > 200) {
+                errors.hr = 'อัตราการเต้นของหัวใจต้องอยู่ระหว่าง 40-200 ครั้ง/นาที';
+            }
+        }
+        
+        if (vitals.rr) {
+            const rr = parseInt(vitals.rr);
+            if (isNaN(rr) || rr < 10 || rr > 30) {
+                errors.rr = 'อัตราการหายใจต้องอยู่ระหว่าง 10-30 ครั้ง/นาที';
+            }
+        }
+        
+        if (vitals.temp) {
+            const temp = parseFloat(vitals.temp);
+            if (isNaN(temp) || temp < 35.5 || temp > 41) {
+                errors.temp = 'อุณหภูมิตัวต้องอยู่ระหว่าง 35.5-41 °C';
+            }
+        }
+        
+        return errors;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
         if (!selectedPatient) {
             setError('กรุณาเลือกผู้ป่วยก่อน');
+            return;
+        }
+
+        // Prepare vital signs data
+        const vitals = {
+            bp: formData.vital_bp,
+            hr: formData.vital_hr,
+            rr: formData.vital_rr,
+            temp: formData.vital_temp
+        };
+
+        // Validate vital signs
+        const validationErrors = validateVitalSigns(vitals);
+        if (Object.keys(validationErrors).length > 0) {
+            setError('ข้อมูลสัญญาณชีพไม่ถูกต้อง: ' + Object.values(validationErrors).join(', '));
             return;
         }
 
@@ -43,12 +92,7 @@ const AssessmentForm = () => {
                     symptom_duration: formData.symptom_duration,
                     previous_meal: formData.previous_meal,
                 },
-                vitals: {
-                    bp: formData.vital_bp,
-                    hr: formData.vital_hr,
-                    rr: formData.vital_rr,
-                    temp: formData.vital_temp
-                },
+                vitals: vitals,
                 aiResponse: null,
                 feedback: null
             };
@@ -68,8 +112,9 @@ const AssessmentForm = () => {
                 vital_temp: ''
             });
 
-            setSuccess('บันทึกการปรึกษาใหม่เรียบร้อยแล้ว\nคุณสามารถกด "วิเคราะห์ด้วย AI" ในประวัติล่าสุดได้เลย');
+            setSuccess('บันทึกการปรึกษาใหม่เรียบร้อยแล้ว\ncุณสามารถกด "วิเคราะห์ด้วย AI" ในประวัติล่าสุดได้เลย');
         } catch (err) {
+            console.error('AssessmentForm Error:', err);
             setError('เกิดข้อผิดพลาดในการบันทึกการปรึกษา: ' + err.message);
         } finally {
             setIsSubmitting(false);

@@ -58,8 +58,31 @@ const verifyToken = async (req, res, next) => {
 };
 
 app.use(helmet());
-// แก้ไข CORS ให้รองรับ Domain ของ Vercel ด้วย
-app.use(cors()); // เปิดให้ทุก origin การตั้งค่านี้เหมาะสำหรับ Vercel
+// Configure CORS for production security
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps, curl requests)
+        if (!origin) return callback(null, true);
+        
+        // List of allowed origins for production
+        const allowedOrigins = [
+            'http://localhost:3000',        // Development
+            'http://localhost:5173',        // Vite dev server
+            'https://medical-learner.vercel.app'  // Production
+        ];
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            console.error(`❌ [CORS] Origin ${origin} not allowed by CORS`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 
 // API Routes (เหมือนเดิม)

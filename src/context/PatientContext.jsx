@@ -60,27 +60,40 @@ export const PatientProvider = ({ children }) => {
     
         const updatePatientHistory = async (patientId, newHistory) => {
         try {
-            // --- START: REVISED FIX ---
-            // The JSON.stringify/parse trick is a robust way to deep-clean an object
-            // of any `undefined` values, which are not allowed by Firestore.
-            // JSON.stringify omits keys with `undefined` values.
-            const deeplyCleanedHistory = JSON.parse(JSON.stringify(newHistory));
-            // --- END: REVISED FIX ---
-
-            // Now, we are certain that `deeplyCleanedHistory` is clean.
+            // Get current user ID
             const userId = getCurrentUserId();
+            if (!userId) {
+                throw new Error("No authenticated user found");
+            }
+            
+            // Generate unique operation ID for tracking
+            const operationId = `update_${patientId}_${Date.now()}`;
+            console.log(`🔄 [PatientContext] Starting history update ${operationId}`);
+            
+            // Deep clean the data to remove undefined values
+            const deeplyCleanedHistory = JSON.parse(JSON.stringify(newHistory));
+            
+            // Update Firestore first
             await updatePatient(patientId, { history: deeplyCleanedHistory }, userId);
             
-            // Update local state to reflect the change immediately
-            setPatients(prevPatients => prevPatients.map(p =>
-                p.id === patientId ? { ...p, history: deeplyCleanedHistory } : p
-            ));
-            setSelectedPatient(prevPatient =>
-                prevPatient && prevPatient.id === patientId ? { ...prevPatient, history: deeplyCleanedHistory } : prevPatient
+            // Update local state immediately
+            setPatients(prevPatients => 
+                prevPatients.map(p => 
+                    p.id === patientId ? { ...p, history: deeplyCleanedHistory } : p
+                )
             );
+            
+            setSelectedPatient(prevPatient => 
+                prevPatient && prevPatient.id === patientId 
+                    ? { ...prevPatient, history: deeplyCleanedHistory } 
+                    : prevPatient
+            );
+            
+            console.log(`✅ [PatientContext] Successfully completed history update ${operationId}`);
         } catch (err) {
+            console.error('❌ [PatientContext] Error updating patient history:', err);
             setError("Failed to update consultation history.");
-            console.error(err);
+            throw err; // Re-throw for component-level error handling
         }
     };
 
