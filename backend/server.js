@@ -1,9 +1,8 @@
-// backend/server.js (ฉบับแก้ไข)
+// backend/server.js (ฉบับแก้ไขที่ถูกต้องสมบูรณ์สำหรับ Vercel)
 
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import helmet from 'helmet';
 import admin from 'firebase-admin';
 
@@ -12,29 +11,32 @@ import diagnosisService from './diagnosisService.js';
 import { fetchPatients } from './firebaseService.js';
 
 // --- 1. Initialize Firebase Admin (ทำที่นี่ที่เดียว) ---
-try {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      "type": "service_account",
-      "project_id": process.env.FIREBASE_PROJECT_ID,
-      "private_key_id": process.env.FIREBASE_PRIVATE_KEY_ID,
-      "private_key": process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      "client_email": process.env.FIREBASE_CLIENT_EMAIL,
-      "client_id": process.env.FIREBASE_CLIENT_ID,
-      "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-      "token_uri": "https://oauth2.googleapis.com/token",
-      "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-      "client_x509_cert_url": process.env.FIREBASE_CLIENT_X509_CERT_URL
-    })
-  });
-  console.log("✅ Firebase Admin SDK initialized successfully.");
-} catch (error) {
-  console.error("❌ Firebase Admin SDK initialization failed:", error);
-  process.exit(1);
+// ตรวจสอบว่าแอปถูก initialize แล้วหรือยัง เพื่อป้องกันการ init ซ้ำซ้อนบน Vercel
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        "type": "service_account",
+        "project_id": process.env.FIREBASE_PROJECT_ID,
+        "private_key_id": process.env.FIREBASE_PRIVATE_KEY_ID,
+        "private_key": process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        "client_email": process.env.FIREBASE_CLIENT_EMAIL,
+        "client_id": process.env.FIREBASE_CLIENT_ID,
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": process.env.FIREBASE_CLIENT_X509_CERT_URL
+      })
+    });
+    console.log("✅ Firebase Admin SDK initialized successfully.");
+  } catch (error) {
+    console.error("❌ Firebase Admin SDK initialization failed:", error);
+    process.exit(1);
+  }
 }
 
+
 const app = express();
-const PORT = process.env.PORT || 3001;
 
 // --- 2. Middleware ---
 
@@ -56,17 +58,16 @@ const verifyToken = async (req, res, next) => {
 };
 
 app.use(helmet());
-app.use(cors({ origin: 'http://localhost:5173' })); // ระบุ Origin ของ Frontend ให้ชัดเจน
+// แก้ไข CORS ให้รองรับ Domain ของ Vercel ด้วย
+app.use(cors()); // เปิดให้ทุก origin การตั้งค่านี้เหมาะสำหรับ Vercel
 app.use(express.json({ limit: '1mb' }));
 
-// API Route
-// API Route
+// API Routes (เหมือนเดิม)
 app.get('/api/export', verifyToken, async (req, res) => {
     try {
         console.log('[Backend] Generating detailed CSV export...');
         const patients = await fetchPatients(req.user.uid);
         
-        // Define new CSV headers for one-row-per-consultation
         const headers = [
             // Patient Info
             'HN', 'ชื่อ', 'อายุ', 'เพศ', 'โทรศัพท์', 'น้ำหนัก (kg)', 'ส่วนสูง (cm)', 'BMI',
@@ -176,7 +177,6 @@ app.post('/api/assess', verifyToken, async (req, res) => {
             });
         }
         
-        // Add user ID to the assessment data for tracking
         const assessmentData = {
             ...userData,
             userId: req.user.uid,
@@ -185,7 +185,7 @@ app.post('/api/assess', verifyToken, async (req, res) => {
         
         const assessmentResult = await diagnosisService.getAiAssessment(assessmentData);
         res.status(200).json(assessmentResult);
-    } catch (error) {
+    } catch (error) { // <-- **แก้ไขจุดนี้**
         console.error("[Backend] Error in /api/assess:", error);
         res.status(500).json({
             error: "เกิดข้อผิดพลาดรุนแรงบนเซิร์ฟเวอร์",
@@ -194,16 +194,5 @@ app.post('/api/assess', verifyToken, async (req, res) => {
     }
 });
 
-// Production: Serve static files from the React build
-if (process.env.NODE_ENV === 'production') {
-    const __dirname = path.resolve();
-    app.use(express.static(path.join(__dirname, '..', 'dist')));
-    app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, '..', 'dist', 'index.html'));
-    });
-}
-
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 [Backend] Server is running on http://localhost:${PORT}`);
-});
+// --- เพิ่มส่วนนี้เข้าไปแทน ---
+export default app;

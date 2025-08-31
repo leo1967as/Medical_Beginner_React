@@ -2,7 +2,7 @@ import React from 'react';
 import { usePatients } from '../context/PatientContext';
 
 const PatientProfile = () => {
-    const { selectedPatient } = usePatients();
+    const { selectedPatient, openModal } = usePatients();
 
     if (!selectedPatient) {
         return <p>กรุณาเลือกผู้ป่วย</p>;
@@ -26,8 +26,25 @@ const PatientProfile = () => {
         return value;
     };
 
+    const handleEditProfile = () => {
+        openModal(selectedPatient);
+    };
+
     return (
-        <div className="form-grid">
+        <div>
+            <div style={{ marginBottom: '20px' }}>
+                {/* <button className="btn btn-primary" style={{ width: 'auto', marginRight: '10px' }}>
+                    โปรไฟล์ผู้ป่วย
+                </button> */}
+                <button 
+                    className="btn btn-secondary" 
+                    style={{ width: 'auto' }}
+                    onClick={handleEditProfile}
+                >
+                    ✏️ แก้ไข
+                </button>
+            </div>
+            <div className="form-grid">
             <div className="form-group">
                 <label>HN</label>
                 <div>{displayValue(selectedPatient.hn)}</div>
@@ -123,6 +140,7 @@ const PatientProfile = () => {
                 <label>บันทึกเพิ่มเติม</label>
                 <div>{displayValue(profile.additional_notes)}</div>
             </div>
+        </div>
         </div>
     );
 };

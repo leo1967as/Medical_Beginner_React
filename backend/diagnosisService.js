@@ -49,8 +49,15 @@ async function generateWithOpenRouter(prompt) {
 
 async function generateWithGemini(prompt) {
     console.log("⚡️ [AI Service] OpenRouter failed. Falling back to Google Gemini...");
-    const result = await diagnosisModelGemini.generateContent(prompt);
-    return result.response.text();
+    try {
+        const result = await diagnosisModelGemini.generateContent(prompt);
+        const responseText = result.response.text();
+        console.log("✅ [AI Service] Received response from Gemini successfully.");
+        return responseText;
+    } catch (geminiError) {
+        console.error('❌ [AI Service] Gemini Error:', geminiError.message);
+        throw new Error(`AI service failed: ${geminiError.message}`);
+    }
 }
 
 async function generateContent(prompt) {
@@ -169,7 +176,13 @@ async function getAiAnalysis(userData) {
     // --- END: UPDATED PROMPT ---
 
     const jsonStringResponse = await generateContent(prompt); 
-    return JSON.parse(jsonStringResponse);
+    try {
+        return JSON.parse(jsonStringResponse);
+    } catch (parseError) {
+        console.error('❌ [AI Service] Failed to parse JSON response:', parseError.message);
+        console.error('📄 [AI Service] Response content:', jsonStringResponse.substring(0, 500));
+        throw new Error('AI service returned invalid response format. Please check API configuration or try again later.');
+    }
 }
 
 const normalizeAiResponse = (analysis) => {

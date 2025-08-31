@@ -2,10 +2,25 @@ import React, { useState } from 'react';
 import { usePatients } from '../context/PatientContext';
 import { getAiAssessment } from '../services/apiService';
 
+const LoadingSpinner = () => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0px' }}>
+        <div className="spinner" style={{ 
+            width: '16px', 
+            height: '16px', 
+            border: '2px solid #f3f3f3',
+            borderTop: '2px solid #007bff',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+        }}></div>
+        <span>กำลังวิเคราะห์...</span>
+    </span>
+);
+
 const ConsultationHistory = () => {
     const { selectedPatient, updatePatientHistory } = usePatients();
     const [expandedHistory, setExpandedHistory] = useState(new Set());
     const [feedbackStates, setFeedbackStates] = useState({});
+    const [analyzingTimestamp, setAnalyzingTimestamp] = useState(null); // Track which consultation is being analyzed
 
     const toggleHistory = (timestamp) => {
         const newExpanded = new Set(expandedHistory);
@@ -20,10 +35,12 @@ const ConsultationHistory = () => {
     const handleAnalyze = async (timestamp) => {
         if (!selectedPatient) return;
 
-        const historyEntry = selectedPatient.history.find(h => h.timestamp === timestamp);
-        if (!historyEntry) return;
+        setAnalyzingTimestamp(timestamp); // Set loading state
 
         try {
+            const historyEntry = selectedPatient.history.find(h => h.timestamp === timestamp);
+            if (!historyEntry) return;
+
             const payload = {
                 ...selectedPatient,
                 symptoms: historyEntry.symptoms.symptoms,
@@ -48,6 +65,8 @@ const ConsultationHistory = () => {
         } catch (error) {
             console.error('Error fetching AI assessment:', error);
             alert(`วิเคราะห์ล้มเหลว: ${error.message}`);
+        } finally {
+            setAnalyzingTimestamp(null); // Clear loading state
         }
     };
 
@@ -122,16 +141,26 @@ const ConsultationHistory = () => {
                                                 ✅ วิเคราะห์แล้ว
                                             </span>
                                         ) : (
-                                            <button
-                                                className="btn btn-secondary"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleAnalyze(historyEntry.timestamp);
-                                                }}
-                                                style={{ fontSize: '0.9rem', padding: '6px 12px' }}
-                                            >
-                                                วิเคราะห์ด้วย AI
-                                            </button>
+                                            analyzingTimestamp === historyEntry.timestamp ? (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    disabled
+                                                    style={{ fontSize: '0.9rem', padding: '6px 12px' }}
+                                                >
+                                                    <LoadingSpinner />
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="btn btn-secondary"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleAnalyze(historyEntry.timestamp);
+                                                    }}
+                                                    style={{ fontSize: '0.9rem', padding: '6px 12px' }}
+                                                >
+                                                    วิเคราะห์ด้วย AI
+                                                </button>
+                                            )
                                         )}
                                     </div>
                                 </div>

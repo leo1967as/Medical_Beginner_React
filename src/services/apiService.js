@@ -27,8 +27,17 @@ export const getAiAssessment = async (payload) => {
     });
 
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to fetch AI assessment');
+        let errorMessage = 'Failed to fetch AI assessment';
+        try {
+            const errorData = await response.json();
+            errorMessage = errorData.details || errorData.message || errorMessage;
+        } catch (jsonError) {
+            // If response is not JSON, read as text
+            const errorText = await response.text();
+            console.error('❌ [API Service] Non-JSON error response:', errorText.substring(0, 500));
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
     }
     return response.json();
 };
