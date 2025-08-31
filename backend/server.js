@@ -70,7 +70,7 @@ app.get('/api/export', verifyToken, async (req, res) => {
         
         const headers = [
             // Patient Info
-            'HN', 'ชื่อ', 'อายุ', 'เพศ', 'โทรศัพท์', 'น้ำหนัก (kg)', 'ส่วนสูง (cm)', 'BMI',
+            'Email', 'HN', 'ชื่อ', 'อายุ', 'เพศ', 'โทรศัพท์', 'น้ำหนัก (kg)', 'ส่วนสูง (cm)', 'BMI',
             'แพ้ยา', 'แพ้อาหาร', 'แพ้อื่นๆ', 'โรคประจำตัว', 'ยาที่ใช้ปัจจุบัน',
             'ประวัติการผ่าตัด', 'ประวัติโรคในครอบครัว', 'การสูบบุหรี่', 'การดื่มแอลกอฮอล์',
             'บันทึกเพิ่มเติม',
@@ -96,6 +96,7 @@ app.get('/api/export', verifyToken, async (req, res) => {
                 profile.current_medications.map(med => `${med.name} ${med.dose} ${med.frequency}`).join('; ') : '';
 
             const patientBaseData = [
+                req.user.email || '', // Add user email
                 patient.hn || '',
                 patient.name || '',
                 patient.age || '',
